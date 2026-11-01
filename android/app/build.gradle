@@ -4,7 +4,7 @@ android {
     namespace = "com.yahya.webappfinancial"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.yahya.webappfinancial"
+        applicationId "com.wachid.financialapp"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

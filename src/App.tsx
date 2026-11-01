@@ -39,7 +39,7 @@ export const AppContent: React.FC = () => {
             initial={{ opacity: 0, y: -20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.95 }}
-            className="fixed top-18 left-4 right-4 z-50 max-w-sm mx-auto pointer-events-none"
+            className="fixed top-[max(6rem,calc(env(safe-area-inset-top)+4rem))] left-4 right-4 z-50 max-w-sm mx-auto pointer-events-none"
           >
             <div
               className={`p-3 rounded-2xl backdrop-blur-xl border shadow-xl flex items-center gap-2.5 text-xs font-semibold ${

@@ -32,7 +32,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSettings }) => {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full backdrop-blur-2xl bg-white/70 dark:bg-[#070A0F]/75 border-b border-white/50 dark:border-white/10 px-4 pt-3 pb-3 transition-colors">
+    <header className="sticky top-0 z-40 w-full backdrop-blur-2xl bg-white/70 dark:bg-[#070A0F]/75 border-b border-white/50 dark:border-white/10 px-4 pt-[max(3rem,calc(env(safe-area-inset-top)+1rem))] pb-3 transition-colors">
       <div className="max-w-md mx-auto flex flex-col gap-3">
         {/* Top Bar: Brand, Sync Pill, Theme & Settings */}
         <div className="flex items-center justify-between">

@@ -28,14 +28,16 @@ const SHEET_NAMES = {
   TRANSACTIONS: 'Transactions',
   FIXED_BUDGETS: 'FixedBudgets',
   INVESTMENTS: 'Investments',
-  USERS: 'Users'
+  USERS: 'Users',
+  NOTES: 'Notes'
 };
 
 const SCHEMAS = {
   Transactions: ['id', 'timestamp', 'userId', 'type', 'category', 'amount', 'description'],
   FixedBudgets: ['id', 'userId', 'name', 'amount', 'dueDate', 'isPaid'],
   Investments: ['id', 'userId', 'name', 'type', 'principal', 'apyPercent', 'netMonthlyYield', 'startDate'],
-  Users: ['id', 'name', 'avatar', 'baseSalary', 'targetSavings']
+  Users: ['id', 'name', 'avatar', 'baseSalary', 'targetSavings'],
+  Notes: ['id', 'title', 'category', 'accountEmail', 'accountPassword', 'content', 'pinned', 'updatedAt']
 };
 
 /**
@@ -153,6 +155,7 @@ function doGet(e) {
         transactions: readSheetData(ss, SHEET_NAMES.TRANSACTIONS),
         fixedBudgets: readSheetData(ss, SHEET_NAMES.FIXED_BUDGETS),
         investments: readSheetData(ss, SHEET_NAMES.INVESTMENTS),
+        notes: readSheetData(ss, SHEET_NAMES.NOTES),
         spreadsheetUrl: ss.getUrl(),
         timestamp: new Date().toISOString()
       };
@@ -239,6 +242,62 @@ function doPost(e) {
         return jsonResponse({ status: 'success', message: 'Investasi berhasil disimpan ke Google Sheets' });
       }
 
+      case 'saveNote': {
+        const note = payload.data;
+        let sheet = ss.getSheetByName(SHEET_NAMES.NOTES);
+        if (!sheet) {
+          sheet = ss.insertSheet(SHEET_NAMES.NOTES);
+        }
+        if (sheet.getLastRow() === 0) {
+          sheet.appendRow(SCHEMAS.Notes);
+          const hr = sheet.getRange(1, 1, 1, SCHEMAS.Notes.length);
+          hr.setFontWeight('bold');
+          hr.setBackground('#007AFF');
+          hr.setFontColor('#FFFFFF');
+          sheet.setFrozenRows(1);
+        }
+        const data = sheet.getDataRange().getValues();
+        let foundIndex = -1;
+        for (let i = 1; i < data.length; i++) {
+          if (String(data[i][0]) === String(note.id)) {
+            foundIndex = i + 1;
+            break;
+          }
+        }
+        const rowVals = [
+          note.id,
+          note.title || 'Catatan',
+          note.category || 'general',
+          note.accountEmail || '',
+          note.accountPassword || '',
+          note.content || '',
+          note.pinned ? true : false,
+          note.updatedAt || new Date().toISOString()
+        ];
+        if (foundIndex > 0) {
+          sheet.getRange(foundIndex, 1, 1, SCHEMAS.Notes.length).setValues([rowVals]);
+        } else {
+          sheet.appendRow(rowVals);
+        }
+        SpreadsheetApp.flush();
+        return jsonResponse({ status: 'success', message: 'Catatan berhasil disimpan ke Google Sheets' });
+      }
+
+      case 'deleteNote': {
+        const { id } = payload.data;
+        const sheet = ss.getSheetByName(SHEET_NAMES.NOTES);
+        if (!sheet) return jsonResponse({ status: 'success' });
+        const data = sheet.getDataRange().getValues();
+        for (let i = 1; i < data.length; i++) {
+          if (String(data[i][0]) === String(id)) {
+            sheet.deleteRow(i + 1);
+            SpreadsheetApp.flush();
+            return jsonResponse({ status: 'success', message: 'Catatan berhasil dihapus dari Google Sheets' });
+          }
+        }
+        return jsonResponse({ status: 'error', message: 'ID catatan tidak ditemukan: ' + id });
+      }
+
       case 'syncAll': {
         if (payload.data && payload.data.transactions) {
           replaceSheetData(ss, SHEET_NAMES.TRANSACTIONS, SCHEMAS.Transactions, payload.data.transactions);
@@ -251,6 +310,9 @@ function doPost(e) {
         }
         if (payload.data && payload.data.users) {
           replaceSheetData(ss, SHEET_NAMES.USERS, SCHEMAS.Users, payload.data.users);
+        }
+        if (payload.data && payload.data.notes) {
+          replaceSheetData(ss, SHEET_NAMES.NOTES, SCHEMAS.Notes, payload.data.notes);
         }
         SpreadsheetApp.flush();
         return jsonResponse({ 

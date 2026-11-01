@@ -9,11 +9,12 @@ import { DepositoCalculatorModal } from './components/deposito/DepositoCalculato
 import { TransactionsList } from './components/transactions/TransactionsList';
 import { TransactionBottomSheet } from './components/transactions/TransactionBottomSheet';
 import { AchievementView } from './components/achievement/AchievementView';
+import { NotesView } from './components/notes/NotesView';
 import { SettingsModal } from './components/settings/SettingsModal';
 import { AndroidGuideModal } from './components/settings/AndroidGuideModal';
 import { FinanceProvider, useFinance } from './context/FinanceContext';
 import { ThemeProvider } from './context/ThemeContext';
-import { ArrowRight, Calculator, CheckCircle2, PiggyBank, Receipt, Sparkles, AlertCircle, Cloud, Trophy } from 'lucide-react';
+import { ArrowRight, Calculator, CheckCircle2, PiggyBank, Receipt, Sparkles, AlertCircle, Cloud, Trophy, NotebookPen } from 'lucide-react';
 import { GlassCard } from './components/common/GlassCard';
 import { triggerHaptic } from './utils/haptics';
 
@@ -79,26 +80,26 @@ export const AppContent: React.FC = () => {
               {/* 2. Cashflow & Income Engine Overview */}
               <CashflowSummary />
 
-              {/* 3. Quick Action Cards: Prestasi, Wajib & Deposito */}
-              <div className="grid grid-cols-3 gap-2.5">
+              {/* 3. Quick Action Cards: Catatan, Wajib, Prestasi, Deposito */}
+              <div className="grid grid-cols-2 gap-2.5">
                 <GlassCard
                   interactive
                   onClick={() => {
                     triggerHaptic('light');
-                    setActiveTab('achievement');
+                    setActiveTab('notes');
                   }}
                   className="p-3 flex flex-col justify-between"
                 >
-                  <div className="p-2 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 w-fit">
-                    <Trophy className="w-4 h-4" />
+                  <div className="p-2 rounded-xl bg-sky-500/15 text-sky-600 dark:text-sky-400 w-fit">
+                    <NotebookPen className="w-4 h-4" />
                   </div>
                   <div className="mt-2.5">
                     <span className="text-xs font-bold text-slate-900 dark:text-white block truncate">
-                      Prestasi
+                      Catatan & Akun
                     </span>
                     <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 flex items-center justify-between">
-                      <span className="truncate">Akumulasi</span>
-                      <ArrowRight className="w-3 h-3 text-amber-500 flex-shrink-0" />
+                      <span className="truncate">Email, Sandi & PIN</span>
+                      <ArrowRight className="w-3 h-3 text-sky-500 flex-shrink-0" />
                     </span>
                   </div>
                 </GlassCard>
@@ -116,11 +117,33 @@ export const AppContent: React.FC = () => {
                   </div>
                   <div className="mt-2.5">
                     <span className="text-xs font-bold text-slate-900 dark:text-white block truncate">
-                      Wajib
+                      Kewajiban
                     </span>
                     <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 flex items-center justify-between">
-                      <span className="truncate">Cicilan</span>
+                      <span className="truncate">Cicilan Rutin</span>
                       <ArrowRight className="w-3 h-3 text-purple-500 flex-shrink-0" />
+                    </span>
+                  </div>
+                </GlassCard>
+
+                <GlassCard
+                  interactive
+                  onClick={() => {
+                    triggerHaptic('light');
+                    setActiveTab('achievement');
+                  }}
+                  className="p-3 flex flex-col justify-between"
+                >
+                  <div className="p-2 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 w-fit">
+                    <Trophy className="w-4 h-4" />
+                  </div>
+                  <div className="mt-2.5">
+                    <span className="text-xs font-bold text-slate-900 dark:text-white block truncate">
+                      Prestasi
+                    </span>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 flex items-center justify-between">
+                      <span className="truncate">Akumulasi Tabungan</span>
+                      <ArrowRight className="w-3 h-3 text-amber-500 flex-shrink-0" />
                     </span>
                   </div>
                 </GlassCard>
@@ -141,7 +164,7 @@ export const AppContent: React.FC = () => {
                       Deposito
                     </span>
                     <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 flex items-center justify-between">
-                      <span className="truncate">Simulasi</span>
+                      <span className="truncate">Simulasi Bunga</span>
                       <ArrowRight className="w-3 h-3 text-blue-500 flex-shrink-0" />
                     </span>
                   </div>
@@ -213,6 +236,18 @@ export const AppContent: React.FC = () => {
               transition={{ duration: 0.2 }}
             >
               <TransactionsList />
+            </motion.div>
+          )}
+
+          {activeTab === 'notes' && (
+            <motion.div
+              key="notes"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2 }}
+            >
+              <NotesView />
             </motion.div>
           )}
         </AnimatePresence>

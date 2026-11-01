@@ -1,10 +1,11 @@
-import { FixedBudget, Investment, MonthlyTarget, SyncConfig, Transaction, UserProfile } from '../types/finance';
+import { FixedBudget, Investment, MonthlyTarget, NoteCategory, NoteItem, SyncConfig, Transaction, UserProfile } from '../types/finance';
 
 const STORAGE_KEYS = {
   USERS: 'fintrack_ayah_users_v1',
   TRANSACTIONS: 'fintrack_ayah_transactions_v1',
   FIXED_BUDGETS: 'fintrack_ayah_fixed_budgets_v1',
   INVESTMENTS: 'fintrack_ayah_investments_v1',
+  NOTES: 'fintrack_ayah_notes_v1',
   SYNC_CONFIG: 'fintrack_ayah_sync_config_v1',
   DEPOSITO_SYNC_ENABLED: 'fintrack_ayah_deposito_sync_enabled_v1',
   MONTHLY_TARGETS: 'fintrack_ayah_monthly_targets_v1',
@@ -32,6 +33,9 @@ export const DEFAULT_INVESTMENTS: Investment[] = [];
 
 // Initial Seed Transactions (Kosong / Mulai dari awal)
 export const DEFAULT_TRANSACTIONS: Transaction[] = [];
+
+// Initial Seed Notes (Kosong / Mulai dari awal)
+export const DEFAULT_NOTES: NoteItem[] = [];
 
 export const DEFAULT_SYNC_CONFIG: SyncConfig = {
   scriptUrl: 'https://script.google.com/macros/s/AKfycbxLTTP0tCI0GEe5_q7FLp1jVl_QG45UwpQoRgmiBK_B76gxXkRjo2wnmODd049kDZ3QUQ/exec',
@@ -136,6 +140,23 @@ export const DataService = {
     localStorage.setItem(STORAGE_KEYS.INVESTMENTS, JSON.stringify(investments));
   },
 
+  getNotes(): NoteItem[] {
+    const raw = localStorage.getItem(STORAGE_KEYS.NOTES);
+    if (!raw) {
+      localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(DEFAULT_NOTES));
+      return DEFAULT_NOTES;
+    }
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return DEFAULT_NOTES;
+    }
+  },
+
+  saveNotes(notes: NoteItem[]) {
+    localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(notes));
+  },
+
   getSyncConfig(): SyncConfig {
     const raw = localStorage.getItem(STORAGE_KEYS.SYNC_CONFIG);
     if (!raw) {
@@ -173,6 +194,7 @@ export const DataService = {
     localStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify(DEFAULT_TRANSACTIONS));
     localStorage.setItem(STORAGE_KEYS.FIXED_BUDGETS, JSON.stringify(DEFAULT_FIXED_BUDGETS));
     localStorage.setItem(STORAGE_KEYS.INVESTMENTS, JSON.stringify(DEFAULT_INVESTMENTS));
+    localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(DEFAULT_NOTES));
     localStorage.removeItem(STORAGE_KEYS.MONTHLY_TARGETS);
   },
 
@@ -184,6 +206,7 @@ export const DataService = {
     transactions?: Transaction[];
     fixedBudgets?: FixedBudget[];
     investments?: Investment[];
+    notes?: NoteItem[];
   }> {
     if (!scriptUrl) throw new Error('URL Google Apps Script belum dikonfigurasi.');
 
@@ -300,7 +323,20 @@ export const DataService = {
       injectedToIncome: i.injectedToIncome !== false && String(i.injectedToIncome).toLowerCase() !== 'false',
     }));
 
-    return { users, transactions, fixedBudgets, investments };
+    // Normalisasi Notes
+    const notes: NoteItem[] = (rawData.notes || []).map((n: any) => ({
+      id: String(n.id || ('note_' + Date.now())),
+      title: String(n.title || 'Catatan'),
+      category: (n.category || 'general') as NoteCategory,
+      accountEmail: n.accountEmail ? String(n.accountEmail) : '',
+      accountPassword: n.accountPassword ? String(n.accountPassword) : '',
+      content: String(n.content || ''),
+      pinned: n.pinned === true || String(n.pinned).toLowerCase() === 'true' || n.pinned === 1 || String(n.pinned) === '1',
+      createdAt: n.createdAt ? String(n.createdAt) : new Date().toISOString(),
+      updatedAt: n.updatedAt ? String(n.updatedAt) : new Date().toISOString(),
+    }));
+
+    return { users, transactions, fixedBudgets, investments, notes };
   },
 
   /**
@@ -333,6 +369,56 @@ export const DataService = {
   },
 
   /**
+   * Save a single note directly to Google Sheets
+   */
+  async saveNoteToGoogleSheets(scriptUrl: string, note: NoteItem): Promise<boolean> {
+    if (!scriptUrl) return false;
+    try {
+      const res = await fetch(scriptUrl, {
+        method: 'POST',
+        redirect: 'follow',
+        headers: {
+          'Content-Type': 'text/plain;charset=utf-8',
+        },
+        body: JSON.stringify({
+          action: 'saveNote',
+          data: note,
+        }),
+      });
+      const text = await res.text();
+      const json = JSON.parse(text);
+      return json && json.status === 'success';
+    } catch {
+      return false;
+    }
+  },
+
+  /**
+   * Delete a note from Google Sheets
+   */
+  async deleteNoteFromGoogleSheets(scriptUrl: string, id: string): Promise<boolean> {
+    if (!scriptUrl) return false;
+    try {
+      const res = await fetch(scriptUrl, {
+        method: 'POST',
+        redirect: 'follow',
+        headers: {
+          'Content-Type': 'text/plain;charset=utf-8',
+        },
+        body: JSON.stringify({
+          action: 'deleteNote',
+          data: { id },
+        }),
+      });
+      const text = await res.text();
+      const json = JSON.parse(text);
+      return json && json.status === 'success';
+    } catch {
+      return false;
+    }
+  },
+
+  /**
    * Push all local data to Google Sheets
    */
   async pushAllToGoogleSheets(scriptUrl: string, data: {
@@ -340,6 +426,7 @@ export const DataService = {
     transactions: Transaction[];
     fixedBudgets: FixedBudget[];
     investments: Investment[];
+    notes?: NoteItem[];
   }): Promise<boolean> {
     if (!scriptUrl) throw new Error('URL Google Apps Script belum dikonfigurasi.');
 

@@ -1,9 +1,9 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle2, LayoutDashboard, Plus, Receipt, Trophy } from 'lucide-react';
+import { CheckCircle2, LayoutDashboard, NotebookPen, Plus, Receipt } from 'lucide-react';
 import { triggerHaptic } from '../../utils/haptics';
 
-export type TabType = 'dashboard' | 'fixed' | 'achievement' | 'deposito' | 'transactions';
+export type TabType = 'dashboard' | 'fixed' | 'achievement' | 'deposito' | 'transactions' | 'notes';
 
 interface BottomNavigationProps {
   activeTab: TabType;
@@ -85,25 +85,25 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
             </motion.button>
           </div>
 
-          {/* Tab 3: Achievement Tabungan */}
+          {/* Tab 3: Catatan & Password (Notes) */}
           <button
-            onClick={() => handleTabClick('achievement')}
+            onClick={() => handleTabClick('notes')}
             className={`flex-1 flex flex-col items-center justify-center py-1 transition-colors relative ${
-              activeTab === 'achievement'
+              activeTab === 'notes'
                 ? 'text-blue-600 dark:text-blue-400 font-semibold'
                 : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
             }`}
           >
             <div className="relative">
-              <Trophy className="w-5 h-5" />
-              {activeTab === 'achievement' && (
+              <NotebookPen className="w-5 h-5" />
+              {activeTab === 'notes' && (
                 <motion.div
                   layoutId="bottomTabIndicator"
                   className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-blue-400"
                 />
               )}
             </div>
-            <span className="text-[10px] mt-1">Prestasi</span>
+            <span className="text-[10px] mt-1">Catatan</span>
           </button>
 
           {/* Tab 4: Transaksi & Riwayat */}

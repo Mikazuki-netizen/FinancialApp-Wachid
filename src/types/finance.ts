@@ -141,3 +141,18 @@ export interface SyncConfig {
   lastSyncedAt?: string;
   autoSync: boolean;
 }
+
+export type NoteCategory = 'email_account' | 'finance_pin' | 'important_doc' | 'general';
+
+export interface NoteItem {
+  id: string;
+  title: string;
+  category: NoteCategory;
+  accountEmail?: string;
+  accountPassword?: string;
+  content: string;
+  pinned: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+

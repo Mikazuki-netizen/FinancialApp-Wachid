@@ -6,6 +6,7 @@ import {
   Investment,
   MonthlyAchievement,
   MonthlyTarget,
+  NoteItem,
   OverallAchievement,
   SyncConfig,
   Transaction,
@@ -45,6 +46,7 @@ interface FinanceContextType {
   transactions: Transaction[];
   fixedBudgets: FixedBudget[];
   investments: Investment[];
+  notes: NoteItem[];
 
   // Filtered Collections for Current View
   filteredTransactions: Transaction[];
@@ -84,6 +86,10 @@ interface FinanceContextType {
   toggleInvestmentActive: (id: string) => void;
   updateUserProfile: (userId: UserId, updates: Partial<UserProfile>) => void;
   resetAllData: () => void;
+  addNote: (note: Omit<NoteItem, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  updateNote: (note: NoteItem) => Promise<void>;
+  deleteNote: (id: string) => Promise<void>;
+  togglePinNote: (id: string) => Promise<void>;
 
   // Deposito Sync Mode (ON = Sync to Main App Cashflow, OFF = Standalone Calculator Only)
   isDepositoSyncEnabled: boolean;
@@ -111,6 +117,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [transactions, setTransactions] = useState<Transaction[]>(() => DataService.getTransactions());
   const [fixedBudgets, setFixedBudgets] = useState<FixedBudget[]>(() => DataService.getFixedBudgets());
   const [investments, setInvestments] = useState<Investment[]>(() => DataService.getInvestments());
+  const [notes, setNotes] = useState<NoteItem[]>(() => DataService.getNotes());
   const [monthlyTargets, setMonthlyTargets] = useState<Record<string, MonthlyTarget>>(() =>
     DataService.getMonthlyTargets()
   );
@@ -153,6 +160,10 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   useEffect(() => {
     DataService.saveInvestments(investments);
   }, [investments]);
+
+  useEffect(() => {
+    DataService.saveNotes(notes);
+  }, [notes]);
 
   useEffect(() => {
     DataService.saveMonthlyTargets(monthlyTargets);
@@ -578,7 +589,69 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setTransactions(DataService.getTransactions());
     setFixedBudgets(DataService.getFixedBudgets());
     setInvestments(DataService.getInvestments());
+    setNotes(DataService.getNotes());
     triggerHaptic('warning');
+  };
+
+  const addNote = async (newNoteData: Omit<NoteItem, 'id' | 'createdAt' | 'updatedAt'>) => {
+    const now = new Date().toISOString();
+    const newNote: NoteItem = {
+      ...newNoteData,
+      id: 'note_' + Date.now(),
+      createdAt: now,
+      updatedAt: now,
+    };
+    const updated = [newNote, ...notes];
+    setNotes(updated);
+    DataService.saveNotes(updated);
+    triggerHaptic('success');
+    showToast('success', 'Catatan berhasil disimpan!');
+
+    if (syncConfig.scriptUrl) {
+      DataService.saveNoteToGoogleSheets(syncConfig.scriptUrl, newNote).catch(() => {});
+    }
+  };
+
+  const updateNote = async (updatedNote: NoteItem) => {
+    const noteWithTimestamp: NoteItem = {
+      ...updatedNote,
+      updatedAt: new Date().toISOString(),
+    };
+    const updated = notes.map(n => (n.id === updatedNote.id ? noteWithTimestamp : n));
+    setNotes(updated);
+    DataService.saveNotes(updated);
+    triggerHaptic('light');
+    showToast('success', 'Catatan berhasil diperbarui!');
+
+    if (syncConfig.scriptUrl) {
+      DataService.saveNoteToGoogleSheets(syncConfig.scriptUrl, noteWithTimestamp).catch(() => {});
+    }
+  };
+
+  const deleteNote = async (id: string) => {
+    const updated = notes.filter(n => n.id !== id);
+    setNotes(updated);
+    DataService.saveNotes(updated);
+    triggerHaptic('medium');
+    showToast('info', 'Catatan dihapus.');
+
+    if (syncConfig.scriptUrl) {
+      DataService.deleteNoteFromGoogleSheets(syncConfig.scriptUrl, id).catch(() => {});
+    }
+  };
+
+  const togglePinNote = async (id: string) => {
+    const target = notes.find(n => n.id === id);
+    if (!target) return;
+    const updatedNote = { ...target, pinned: !target.pinned, updatedAt: new Date().toISOString() };
+    const updated = notes.map(n => (n.id === id ? updatedNote : n));
+    setNotes(updated);
+    DataService.saveNotes(updated);
+    triggerHaptic('light');
+
+    if (syncConfig.scriptUrl) {
+      DataService.saveNoteToGoogleSheets(syncConfig.scriptUrl, updatedNote).catch(() => {});
+    }
   };
 
   const updateSyncConfig = (config: Partial<SyncConfig>) => {
@@ -602,10 +675,11 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       if (data.transactions && Array.isArray(data.transactions)) setTransactions(data.transactions);
       if (data.fixedBudgets && Array.isArray(data.fixedBudgets)) setFixedBudgets(data.fixedBudgets);
       if (data.investments && Array.isArray(data.investments)) setInvestments(data.investments);
+      if (data.notes && Array.isArray(data.notes)) setNotes(data.notes);
 
       const now = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
       setSyncConfigState(prev => ({ ...prev, lastSyncedAt: now }));
-      setSyncSuccessMessage(`Sinkronisasi berhasil! ${data.transactions?.length || 0} transaksi & ${data.fixedBudgets?.length || 0} tagihan dimuat (${now})`);
+      setSyncSuccessMessage(`Sinkronisasi berhasil! ${data.transactions?.length || 0} transaksi, ${data.notes?.length || 0} catatan dimuat (${now})`);
       triggerHaptic('success');
       return true;
     } catch (err: any) {
@@ -634,12 +708,13 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         transactions,
         fixedBudgets,
         investments,
+        notes,
       });
 
       if (ok) {
         const now = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
         setSyncConfigState(prev => ({ ...prev, lastSyncedAt: now }));
-        setSyncSuccessMessage(`Berhasil! ${transactions.length} transaksi, ${fixedBudgets.length} tagihan & profil berhasil diunggah ke Google Sheets (${now})`);
+        setSyncSuccessMessage(`Berhasil! ${transactions.length} transaksi, ${notes.length} catatan & profil berhasil diunggah (${now})`);
         triggerHaptic('success');
         return true;
       } else {
@@ -804,6 +879,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         transactions,
         fixedBudgets,
         investments,
+        notes,
         filteredTransactions,
         monthTransactions,
         filteredFixedBudgets,
@@ -835,6 +911,10 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         toggleInvestmentActive,
         updateUserProfile,
         resetAllData,
+        addNote,
+        updateNote,
+        deleteNote,
+        togglePinNote,
         isDepositoSyncEnabled,
         setDepositoSyncEnabled,
         toast,

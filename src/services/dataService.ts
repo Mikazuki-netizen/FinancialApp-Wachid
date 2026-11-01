@@ -34,7 +34,7 @@ export const DEFAULT_INVESTMENTS: Investment[] = [];
 export const DEFAULT_TRANSACTIONS: Transaction[] = [];
 
 export const DEFAULT_SYNC_CONFIG: SyncConfig = {
-  scriptUrl: '',
+  scriptUrl: 'https://script.google.com/macros/s/AKfycbxLTTP0tCI0GEe5_q7FLp1jVl_QG45UwpQoRgmiBK_B76gxXkRjo2wnmODd049kDZ3QUQ/exec',
   autoSync: true,
 };
 

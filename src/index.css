@@ -1,0 +1,71 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif;
+}
+
+/* Custom Glassmorphism Classes */
+@layer components {
+  .glass-card {
+    @apply bg-white/70 dark:bg-[#121824]/70 backdrop-blur-2xl border border-white/60 dark:border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.06)] dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.35)];
+  }
+
+  .glass-card-interactive {
+    @apply glass-card transition-all duration-300 active:scale-[0.98] hover:border-blue-500/40 hover:shadow-glow-blue;
+  }
+
+  .glass-nav {
+    @apply bg-white/75 dark:bg-[#0c101a]/80 backdrop-blur-2xl border-t border-white/50 dark:border-white/10 shadow-[0_-8px_32px_0_rgba(0,0,0,0.08)] dark:shadow-[0_-8px_32px_0_rgba(0,0,0,0.4)];
+  }
+
+  .glass-modal {
+    @apply bg-white/85 dark:bg-[#0f1422]/90 backdrop-blur-3xl border border-white/60 dark:border-white/15 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] dark:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7)];
+  }
+
+  .glass-input {
+    @apply bg-black/[0.04] dark:bg-white/[0.06] border border-black/10 dark:border-white/10 backdrop-blur-md rounded-2xl px-4 py-3 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all;
+  }
+
+  .glass-pill {
+    @apply bg-black/5 dark:bg-white/10 backdrop-blur-md border border-black/5 dark:border-white/10 rounded-full px-3 py-1 text-xs font-medium;
+  }
+}
+
+/* Smooth Touch and Apple Feel */
+* {
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+input, textarea, select {
+  user-select: text;
+}
+
+/* Hide scrollbars while preserving scrolling */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Background Ambient Glows */
+.mesh-bg-gradient {
+  background-image: 
+    radial-gradient(at 10% 20%, rgba(59, 130, 246, 0.12) 0px, transparent 50%),
+    radial-gradient(at 90% 10%, rgba(168, 85, 247, 0.12) 0px, transparent 50%),
+    radial-gradient(at 50% 90%, rgba(16, 185, 129, 0.08) 0px, transparent 50%);
+}
+
+.dark .mesh-bg-gradient {
+  background-image: 
+    radial-gradient(at 10% 20%, rgba(59, 130, 246, 0.18) 0px, transparent 50%),
+    radial-gradient(at 90% 10%, rgba(168, 85, 247, 0.18) 0px, transparent 50%),
+    radial-gradient(at 50% 80%, rgba(16, 185, 129, 0.12) 0px, transparent 50%),
+    radial-gradient(at 80% 90%, rgba(244, 63, 94, 0.12) 0px, transparent 50%);
+}
